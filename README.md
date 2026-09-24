@@ -16,5 +16,5 @@ Set Authentication → URL Configuration → Site URL to your Vercel URL so conf
 ## Deploy to Vercel
 
 1. Push to GitHub and import the repo in Vercel (framework preset: Vite).
-2. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` under Project → Settings → Environment Variables.
+2. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` under Project → Settings → Environment Variables.
 3. Deploy.
