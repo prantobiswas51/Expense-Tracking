@@ -16,7 +16,7 @@ export default function AuthShell({ title, subtitle, children }: { title: string
           <p className="text-[0.8rem] font-medium text-[#545454]">{subtitle}</p>
         </div>
         {children}
-        <p className="mt-6 text-center text-[0.68rem] text-[#545454] opacity-70">&copy; {new Date().getFullYear()} Personal App</p>
+        <p className="mt-6 text-center text-[0.68rem] text-[#545454] opacity-70">&copy; {new Date().getFullYear()} Expense Tracker</p>
       </div>
     </div>
   )

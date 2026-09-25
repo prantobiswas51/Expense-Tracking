@@ -1,23 +1,35 @@
 import type { User } from '@supabase/supabase-js'
 import { useEffect, useState } from 'react'
+import Cashflow from './Cashflow'
+import Categories from './Categories'
+import CashflowSummary from './CashflowSummary'
+import ProjectView from './ProjectView'
+import Profile from './Profile'
 import Projects from './Projects'
 import { supabase } from './supabase'
 
 const nav = [
   { id: 'dashboard', icon: 'fa-gauge-high', label: 'Dashboard' },
+  { id: 'cashflow', icon: 'fa-money-bill-transfer', label: 'Cashflow' },
   { id: 'projects', icon: 'fa-folder-open', label: 'Projects' },
+  { id: 'categories', icon: 'fa-tags', label: 'Categories' },
+  { id: 'profile', icon: 'fa-user-gear', label: 'Profile' },
 ]
-const currentPage = () => (nav.some((n) => n.id === location.hash.slice(1)) ? location.hash.slice(1) : 'dashboard')
+// Hash routes: #page or #page/param (e.g. #projects/my-app)
+const currentRoute = () => {
+  const [page, ...rest] = location.hash.slice(1).split('/')
+  return nav.some((n) => n.id === page) ? { page, param: decodeURIComponent(rest.join('/')) } : { page: 'dashboard', param: '' }
+}
 
 const border = 'border-[rgba(22,17,56,0.08)]'
 const pill = `rounded-full border ${border} bg-[rgba(22,17,56,0.04)]`
 
 export default function Dashboard({ user }: { user: User }) {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [page, setPage] = useState(currentPage)
+  const [{ page, param }, setRoute] = useState(currentRoute)
 
   useEffect(() => {
-    const onHash = () => setPage(currentPage())
+    const onHash = () => setRoute(currentRoute())
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
@@ -72,13 +84,13 @@ export default function Dashboard({ user }: { user: User }) {
         </nav>
 
         <div className={`shrink-0 border-t p-3 ${border}`}>
-          <div className="flex items-center gap-[0.6rem] rounded-xl border border-[rgba(226,30,83,0.12)] bg-[rgba(226,30,83,0.04)] p-3">
+          <a href="#profile" onClick={() => setMenuOpen(false)} title="Edit profile" className="flex items-center gap-[0.6rem] rounded-xl border border-[rgba(226,30,83,0.12)] bg-[rgba(226,30,83,0.04)] p-3 transition-colors hover:bg-[rgba(226,30,83,0.08)]">
             <div className={`${avatar} h-[2.1rem] w-[2.1rem] text-[0.8rem]`}>{initial}</div>
             <div className="flex min-w-0 flex-col">
               <span className="truncate text-[0.8rem] font-bold">{name}</span>
               <span className="truncate text-[0.62rem] font-medium text-[#545454]">{user.email}</span>
             </div>
-          </div>
+          </a>
         </div>
       </aside>
 
@@ -94,10 +106,10 @@ export default function Dashboard({ user }: { user: User }) {
           </div>
 
           <div className="ml-auto flex items-center gap-[0.65rem]">
-            <div className={`hidden h-[38px] items-center gap-[0.6rem] py-1 pl-1 pr-4 sm:flex ${pill}`}>
+            <a href="#profile" title="Edit profile" className={`hidden h-[38px] items-center gap-[0.6rem] py-1 pl-1 pr-4 transition-colors hover:bg-[rgba(22,17,56,0.08)] sm:flex ${pill}`}>
               <div className={`${avatar} h-[30px] w-[30px] text-[0.8rem]`}>{initial}</div>
               <span className="max-w-[11rem] truncate text-[0.8rem] font-extrabold">{name}</span>
-            </div>
+            </a>
             <button
               onClick={() => supabase.auth.signOut()}
               className="rounded-md border border-[rgba(239,68,68,0.15)] bg-[rgba(239,68,68,0.08)] px-[0.85rem] py-1 font-bold text-[#ef4444] transition-all hover:-translate-y-[1.5px] hover:border-[#ef4444] hover:bg-[#ef4444] hover:text-white hover:shadow-[0_4px_12px_rgba(239,68,68,0.25)]"
@@ -110,20 +122,22 @@ export default function Dashboard({ user }: { user: User }) {
 
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <div className="mx-auto w-full max-w-[1400px] rounded-xl border border-white/40 bg-white/60 p-6 shadow-md backdrop-blur-xl">
-            {page === 'projects' ? (
+            {page === 'projects' && param ? (
+              <ProjectView key={param} slug={param} />
+            ) : page === 'projects' ? (
               <Projects />
+            ) : page === 'categories' ? (
+              <Categories key={page} table="project_categories" usedBy="projects" title="Project categories" subtitle="Types you can assign to projects" noun="category" usedByLabel="Projects" />
+            ) : page === 'cashflow' ? (
+              <Cashflow />
+            ) : page === 'profile' ? (
+              <Profile user={user} />
             ) : (
               <>
                 <h1 className="text-[1.35rem] font-black tracking-[-0.02em]">Dashboard</h1>
                 <p className="mt-1 text-[0.8rem] font-medium text-[#545454]">Overview of your account</p>
 
-                <div className="mt-6 flex items-center gap-4 rounded-xl border border-[#e8e8e8] bg-white p-5 shadow-sm">
-                  <div className={`${avatar} h-14 w-14 text-xl`}>{initial}</div>
-                  <div className="min-w-0">
-                    <p className="text-sm text-[#545454]">Welcome back,</p>
-                    <p className="truncate text-2xl font-black tracking-[-0.02em]">{name}</p>
-                  </div>
-                </div>
+                <CashflowSummary />
               </>
             )}
           </div>
