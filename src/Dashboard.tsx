@@ -1,12 +1,26 @@
 import type { User } from '@supabase/supabase-js'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import Projects from './Projects'
 import { supabase } from './supabase'
+
+const nav = [
+  { id: 'dashboard', icon: 'fa-gauge-high', label: 'Dashboard' },
+  { id: 'projects', icon: 'fa-folder-open', label: 'Projects' },
+]
+const currentPage = () => (nav.some((n) => n.id === location.hash.slice(1)) ? location.hash.slice(1) : 'dashboard')
 
 const border = 'border-[rgba(22,17,56,0.08)]'
 const pill = `rounded-full border ${border} bg-[rgba(22,17,56,0.04)]`
 
 export default function Dashboard({ user }: { user: User }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [page, setPage] = useState(currentPage)
+
+  useEffect(() => {
+    const onHash = () => setPage(currentPage())
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
   const name: string = user.user_metadata.full_name || user.email?.split('@')[0] || 'there'
   const initial = name.charAt(0).toUpperCase()
   const avatar = 'flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-violet-500 font-black text-white'
@@ -33,11 +47,28 @@ export default function Dashboard({ user }: { user: User }) {
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <span className="block px-[0.85rem] pb-[0.15rem] pt-[0.4rem] text-[0.6rem] font-extrabold uppercase tracking-[0.1em] text-[#545454] opacity-60">Core</span>
-          <a aria-current="page" className="relative flex items-center gap-3 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 px-[1.15rem] py-[0.8rem] text-[0.875rem] font-semibold text-white shadow-[0_4px_12px_rgba(226,30,83,0.25)]">
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-white/15"><i className="fa-solid fa-gauge-high" /></span>
-            Dashboard
-            <span className="absolute right-3 h-[6px] w-[6px] animate-[pip-pulse_2s_infinite] rounded-full bg-white/70 shadow-[0_0_6px_rgba(255,255,255,0.5)]" />
-          </a>
+          {nav.map((item) => {
+            const active = page === item.id
+            return (
+              <a
+                key={item.id}
+                href={`#${item.id}`}
+                onClick={() => setMenuOpen(false)}
+                aria-current={active ? 'page' : undefined}
+                className={`relative mb-[0.15rem] flex items-center gap-3 rounded-xl px-[1.15rem] py-[0.8rem] text-[0.875rem] font-semibold transition-all duration-200 ${
+                  active
+                    ? 'bg-gradient-to-br from-brand-500 to-brand-600 text-white shadow-[0_4px_12px_rgba(226,30,83,0.25)]'
+                    : 'text-[#545454] hover:translate-x-[3px] hover:bg-[rgba(226,30,83,0.05)] hover:text-[#1E1E1E]'
+                }`}
+              >
+                <span className={`flex h-6 w-6 items-center justify-center rounded-md ${active ? 'bg-white/15' : 'bg-[rgba(226,30,83,0.08)] text-brand-500'}`}>
+                  <i className={`fa-solid ${item.icon}`} />
+                </span>
+                {item.label}
+                {active && <span className="absolute right-3 h-[6px] w-[6px] animate-[pip-pulse_2s_infinite] rounded-full bg-white/70 shadow-[0_0_6px_rgba(255,255,255,0.5)]" />}
+              </a>
+            )
+          })}
         </nav>
 
         <div className={`shrink-0 border-t p-3 ${border}`}>
@@ -79,16 +110,22 @@ export default function Dashboard({ user }: { user: User }) {
 
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <div className="mx-auto w-full max-w-[1400px] rounded-xl border border-white/40 bg-white/60 p-6 shadow-md backdrop-blur-xl">
-            <h1 className="text-[1.35rem] font-black tracking-[-0.02em]">Dashboard</h1>
-            <p className="mt-1 text-[0.8rem] font-medium text-[#545454]">Overview of your account</p>
+            {page === 'projects' ? (
+              <Projects />
+            ) : (
+              <>
+                <h1 className="text-[1.35rem] font-black tracking-[-0.02em]">Dashboard</h1>
+                <p className="mt-1 text-[0.8rem] font-medium text-[#545454]">Overview of your account</p>
 
-            <div className="mt-6 flex items-center gap-4 rounded-xl border border-[#e8e8e8] bg-white p-5 shadow-sm">
-              <div className={`${avatar} h-14 w-14 text-xl`}>{initial}</div>
-              <div className="min-w-0">
-                <p className="text-sm text-[#545454]">Welcome back,</p>
-                <p className="truncate text-2xl font-black tracking-[-0.02em]">{name}</p>
-              </div>
-            </div>
+                <div className="mt-6 flex items-center gap-4 rounded-xl border border-[#e8e8e8] bg-white p-5 shadow-sm">
+                  <div className={`${avatar} h-14 w-14 text-xl`}>{initial}</div>
+                  <div className="min-w-0">
+                    <p className="text-sm text-[#545454]">Welcome back,</p>
+                    <p className="truncate text-2xl font-black tracking-[-0.02em]">{name}</p>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </main>
 
