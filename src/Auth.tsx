@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import AuthShell, { primaryButton } from './AuthShell'
-import { supabase } from './supabase'
+import { authLinkError, supabase } from './supabase'
 
 const inputClass =
   'w-full pl-10 pr-10 py-[0.65rem] bg-white border border-[#e8e8e8] text-[#1E1E1E] rounded-lg text-[0.875rem] font-medium transition-all duration-200 outline-none focus:border-brand-500 focus:shadow-[0_0_0_3px_rgba(226,30,83,0.15)] disabled:opacity-60 disabled:cursor-not-allowed'
@@ -18,12 +18,13 @@ function Field({ label, icon, children }: { label: string; icon: string; childre
 }
 
 export default function Auth() {
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login')
   const [showPass, setShowPass] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(authLinkError)
   const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
   const isSignup = mode === 'signup'
+  const isForgot = mode === 'forgot'
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -33,6 +34,15 @@ export default function Auth() {
     const email = String(form.get('email')).trim()
     const password = String(form.get('password'))
     const fullName = String(form.get('name') ?? '').trim()
+
+    if (isForgot) {
+      setBusy(true)
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin })
+      setBusy(false)
+      // Same message whether or not the account exists, so emails can't be probed.
+      if (error) return setError(error.message)
+      return setInfo(`If an account exists for ${email}, a password reset link is on its way. Check your inbox.`)
+    }
 
     if (isSignup && password !== form.get('confirm')) return setError('Passwords do not match')
 
@@ -46,8 +56,8 @@ export default function Auth() {
     if (isSignup && !data.session) setInfo('Check your email to confirm your account, then sign in.')
   }
 
-  function switchMode() {
-    setMode(isSignup ? 'login' : 'signup')
+  function go(next: typeof mode) {
+    setMode(next)
     setError('')
     setInfo('')
   }
@@ -55,7 +65,10 @@ export default function Auth() {
   const passType = showPass ? 'text' : 'password'
 
   return (
-    <AuthShell title={isSignup ? 'Create account' : 'Welcome back'} subtitle={isSignup ? 'Sign up to get started' : 'Sign in to your account'}>
+    <AuthShell
+      title={isForgot ? 'Reset password' : isSignup ? 'Create account' : 'Welcome back'}
+      subtitle={isForgot ? "Enter your email and we'll send you a reset link" : isSignup ? 'Sign up to get started' : 'Sign in to your account'}
+    >
       <form onSubmit={onSubmit} className="flex flex-col gap-5">
         {isSignup && (
           <Field label="Name" icon="fa-user">
@@ -67,6 +80,7 @@ export default function Auth() {
           <input name="email" type="email" required autoFocus={!isSignup} autoComplete="email" disabled={busy} placeholder="you@example.com" className={inputClass} />
         </Field>
 
+        {!isForgot && (
         <Field label="Password" icon="fa-lock">
           <input
             name="password"
@@ -87,6 +101,13 @@ export default function Auth() {
             <i className={`fa-solid ${showPass ? 'fa-eye-slash' : 'fa-eye'}`} />
           </button>
         </Field>
+        )}
+
+        {mode === 'login' && (
+          <button type="button" onClick={() => go('forgot')} className="-mt-3 self-end text-[0.75rem] font-bold text-brand-600 hover:underline">
+            Forgot password?
+          </button>
+        )}
 
         {isSignup && (
           <Field label="Confirm password" icon="fa-lock">
@@ -98,16 +119,25 @@ export default function Auth() {
         {info && <p role="status" className="text-[0.75rem] font-semibold text-[#10b981]">{info}</p>}
 
         <button type="submit" disabled={busy} className={primaryButton}>
-          <i className={`fa-solid ${busy ? 'fa-spinner fa-spin' : isSignup ? 'fa-user-plus' : 'fa-arrow-right-to-bracket'}`} />
-          {busy ? 'Please wait…' : isSignup ? 'Create account' : 'Sign in'}
+          <i className={`fa-solid ${busy ? 'fa-spinner fa-spin' : isForgot ? 'fa-paper-plane' : isSignup ? 'fa-user-plus' : 'fa-arrow-right-to-bracket'}`} />
+          {busy ? 'Please wait…' : isForgot ? 'Send reset link' : isSignup ? 'Create account' : 'Sign in'}
         </button>
       </form>
 
       <p className="mt-8 text-center text-[0.78rem] font-medium text-[#545454]">
-        {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
-        <button type="button" onClick={switchMode} className="font-bold text-brand-600 hover:underline">
-          {isSignup ? 'Sign in' : 'Sign up'}
-        </button>
+        {isForgot ? (
+          <>
+            Remembered it?{' '}
+            <button type="button" onClick={() => go('login')} className="font-bold text-brand-600 hover:underline">Back to sign in</button>
+          </>
+        ) : (
+          <>
+            {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
+            <button type="button" onClick={() => go(isSignup ? 'login' : 'signup')} className="font-bold text-brand-600 hover:underline">
+              {isSignup ? 'Sign in' : 'Sign up'}
+            </button>
+          </>
+        )}
       </p>
     </AuthShell>
   )

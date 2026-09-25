@@ -7,6 +7,7 @@ import ProjectView from './ProjectView'
 import Profile from './Profile'
 import Projects from './Projects'
 import { supabase } from './supabase'
+import { Avatar } from './ui'
 
 const nav = [
   { id: 'dashboard', icon: 'fa-gauge-high', label: 'Dashboard' },
@@ -34,8 +35,7 @@ export default function Dashboard({ user }: { user: User }) {
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
   const name: string = user.user_metadata.full_name || user.email?.split('@')[0] || 'there'
-  const initial = name.charAt(0).toUpperCase()
-  const avatar = 'flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-violet-500 font-black text-white'
+  const avatarUrl: string | undefined = user.user_metadata.avatar_url
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f0f4f8] to-[#e2e8f0]">
@@ -85,7 +85,7 @@ export default function Dashboard({ user }: { user: User }) {
 
         <div className={`shrink-0 border-t p-3 ${border}`}>
           <a href="#profile" onClick={() => setMenuOpen(false)} title="Edit profile" className="flex items-center gap-[0.6rem] rounded-xl border border-[rgba(226,30,83,0.12)] bg-[rgba(226,30,83,0.04)] p-3 transition-colors hover:bg-[rgba(226,30,83,0.08)]">
-            <div className={`${avatar} h-[2.1rem] w-[2.1rem] text-[0.8rem]`}>{initial}</div>
+            <Avatar name={name} url={avatarUrl} className="h-[2.1rem] w-[2.1rem] text-[0.8rem]" />
             <div className="flex min-w-0 flex-col">
               <span className="truncate text-[0.8rem] font-bold">{name}</span>
               <span className="truncate text-[0.62rem] font-medium text-[#545454]">{user.email}</span>
@@ -107,7 +107,7 @@ export default function Dashboard({ user }: { user: User }) {
 
           <div className="ml-auto flex items-center gap-[0.65rem]">
             <a href="#profile" title="Edit profile" className={`hidden h-[38px] items-center gap-[0.6rem] py-1 pl-1 pr-4 transition-colors hover:bg-[rgba(22,17,56,0.08)] sm:flex ${pill}`}>
-              <div className={`${avatar} h-[30px] w-[30px] text-[0.8rem]`}>{initial}</div>
+              <Avatar name={name} url={avatarUrl} className="h-[30px] w-[30px] text-[0.8rem]" />
               <span className="max-w-[11rem] truncate text-[0.8rem] font-extrabold">{name}</span>
             </a>
             <button

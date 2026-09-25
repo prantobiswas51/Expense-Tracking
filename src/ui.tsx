@@ -93,6 +93,14 @@ export function FilterSelect({ label, value, onChange, children }: { label: stri
   )
 }
 
+/** Round profile picture, falling back to the name's initial on a gradient. */
+export function Avatar({ name, url, className = 'h-8 w-8 text-[0.8rem]' }: { name: string; url?: string | null; className?: string }) {
+  const base = `flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-brand-500 to-violet-500 font-black text-white ${className}`
+  return url
+    ? <img src={url} alt="" className={`${base} object-cover`} />
+    : <span className={base} aria-hidden>{name.charAt(0).toUpperCase()}</span>
+}
+
 export const labelClass = 'mb-1 block text-[0.75rem] font-bold text-[#545454]'
 
 export function friendly(error: { code?: string; message: string }, duplicate = 'That value is already used.') {
