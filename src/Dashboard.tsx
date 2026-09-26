@@ -2,6 +2,7 @@ import type { User } from '@supabase/supabase-js'
 import { useEffect, useState } from 'react'
 import Cashflow from './Cashflow'
 import Categories from './Categories'
+import Clients from './Clients'
 import CashflowSummary from './CashflowSummary'
 import ProjectView from './ProjectView'
 import Profile from './Profile'
@@ -13,6 +14,7 @@ const nav = [
   { id: 'dashboard', icon: 'fa-gauge-high', label: 'Dashboard' },
   { id: 'cashflow', icon: 'fa-money-bill-transfer', label: 'Cashflow' },
   { id: 'projects', icon: 'fa-folder-open', label: 'Projects' },
+  { id: 'clients', icon: 'fa-user-tie', label: 'Clients' },
   { id: 'categories', icon: 'fa-tags', label: 'Categories' },
   { id: 'profile', icon: 'fa-user-gear', label: 'Profile' },
 ]
@@ -130,6 +132,8 @@ export default function Dashboard({ user }: { user: User }) {
               <Categories key={page} table="project_categories" usedBy="projects" title="Project categories" subtitle="Types you can assign to projects" noun="category" usedByLabel="Projects" />
             ) : page === 'cashflow' ? (
               <Cashflow />
+            ) : page === 'clients' ? (
+              <Clients />
             ) : page === 'profile' ? (
               <Profile user={user} />
             ) : (

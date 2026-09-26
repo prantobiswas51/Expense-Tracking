@@ -11,6 +11,7 @@ type Project = {
   due_date: string | null
   created_at: string
   type: { name: string } | null
+  clients: { client: { name: string; company: string | null; email: string | null; phone: string | null } | null }[]
 }
 type Entry = { id: string; name: string; amount: number; created_at: string; direction: Direction }
 
@@ -32,7 +33,7 @@ export default function ProjectView({ slug }: { slug: string }) {
     async function load() {
       const { data: p, error: pErr } = await supabase
         .from('projects')
-        .select('id, name, slug, description, status, due_date, created_at, type:project_categories(name)')
+        .select('id, name, slug, description, status, due_date, created_at, type:project_categories(name), clients:project_clients(client:clients(name, company, email, phone))')
         .eq('slug', slug)
         .maybeSingle()
       if (pErr) return setError(friendly(pErr))
@@ -79,6 +80,22 @@ export default function ProjectView({ slug }: { slug: string }) {
             <Detail label="Slug"><code className="text-brand-600">{project.slug}</code></Detail>
             <Detail label="Created">{new Date(project.created_at).toLocaleString()}</Detail>
           </dl>
+
+          {project.clients.length > 0 && (
+            <div className="mb-8">
+              <h2 className="mb-3 text-sm font-bold text-[#3f3f3f]">Clients <span className="font-medium text-[#8a8a8a]">({project.clients.length})</span></h2>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {project.clients.map(({ client }, i) => client && (
+                  <div key={i} className="min-w-0 rounded-xl border border-[#e8e8e8] bg-white p-4 shadow-sm">
+                    <div className="truncate font-semibold">{client.name}</div>
+                    {client.company && <div className="truncate text-[0.78rem] text-[#545454]">{client.company}</div>}
+                    {client.email && <a href={`mailto:${client.email}`} className="mt-1 block truncate text-[0.78rem] text-brand-600 hover:underline">{client.email}</a>}
+                    {client.phone && <a href={`tel:${client.phone}`} className="block truncate text-[0.78rem] text-[#545454] hover:underline">{client.phone}</a>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {entries && (
             <div className="mb-8">
