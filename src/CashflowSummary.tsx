@@ -73,6 +73,8 @@ function TopProject({ label, icon, tone, project, empty }: { label: string; icon
 
 
 const presets = [
+  { id: 'month', label: 'This Month' },
+  { id: 'prev', label: 'Previous Month' },
   { id: '7d', label: '7D' },
   { id: '1m', label: '1M' },
   { id: '3m', label: '3M' },
@@ -85,14 +87,19 @@ type Preset = (typeof presets)[number]['id']
 /** YYYY-MM-DD in local time */
 const ymd = (d: Date) => d.toLocaleDateString('en-CA')
 
-function presetStart(preset: Exclude<Preset, 'custom'>) {
+function presetRange(preset: Exclude<Preset, 'custom'>) {
+  const now = new Date()
+  const today = ymd(now)
+  if (preset === 'month') return { from: ymd(new Date(now.getFullYear(), now.getMonth(), 1)), to: today }
+  if (preset === 'prev')
+    return { from: ymd(new Date(now.getFullYear(), now.getMonth() - 1, 1)), to: ymd(new Date(now.getFullYear(), now.getMonth(), 0)) }
   const d = new Date()
   if (preset === '7d') d.setDate(d.getDate() - 6) // today + previous 6 days
   if (preset === '1m') d.setMonth(d.getMonth() - 1)
   if (preset === '3m') d.setMonth(d.getMonth() - 3)
   if (preset === '6m') d.setMonth(d.getMonth() - 6)
   if (preset === '1y') d.setFullYear(d.getFullYear() - 1)
-  return ymd(d)
+  return { from: ymd(d), to: today }
 }
 
 /** Local-midnight Date for a YYYY-MM-DD string */
@@ -100,14 +107,13 @@ const startOf = (day: string) => new Date(`${day}T00:00:00`)
 
 export default function CashflowSummary() {
   const today = ymd(new Date())
-  const [preset, setPreset] = useState<Preset>('1m')
-  const [custom, setCustom] = useState({ from: presetStart('1m'), to: today })
+  const [preset, setPreset] = useState<Preset>('month')
+  const [custom, setCustom] = useState(() => presetRange('1m'))
   const [rows, setRows] = useState<Row[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const from = preset === 'custom' ? custom.from : presetStart(preset)
-  const to = preset === 'custom' ? custom.to : today
+  const { from, to } = preset === 'custom' ? custom : presetRange(preset)
   const valid = Boolean(from && to && from <= to)
 
   useEffect(() => {
@@ -159,7 +165,7 @@ export default function CashflowSummary() {
           <h2 className="text-sm font-bold text-[#3f3f3f]">Cashflow</h2>
           {valid && <p className="text-[0.75rem] text-[#545454]">{fmt(from)} – {fmt(to)}</p>}
         </div>
-        <div role="group" aria-label="Period" className="inline-flex rounded-lg border border-[#e8e8e8] bg-white p-1 shadow-sm">
+        <div role="group" aria-label="Period" className="inline-flex flex-wrap rounded-lg border border-[#e8e8e8] bg-white p-1 shadow-sm">
           {presets.map((p) => (
             <button
               key={p.id}
