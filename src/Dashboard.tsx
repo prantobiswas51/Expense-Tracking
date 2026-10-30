@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import Cashflow from './Cashflow'
 import Categories from './Categories'
 import Clients from './Clients'
+import Loans from './Loans'
 import CashflowSummary from './CashflowSummary'
 import ProjectView from './ProjectView'
 import Profile from './Profile'
@@ -13,6 +14,7 @@ import { Avatar } from './ui'
 const nav = [
   { id: 'dashboard', icon: 'fa-gauge-high', label: 'Dashboard' },
   { id: 'cashflow', icon: 'fa-money-bill-transfer', label: 'Cashflow' },
+  { id: 'loans', icon: 'fa-hand-holding-dollar', label: 'Loans' },
   { id: 'projects', icon: 'fa-folder-open', label: 'Projects' },
   { id: 'clients', icon: 'fa-user-tie', label: 'Clients' },
   { id: 'categories', icon: 'fa-tags', label: 'Categories' },
@@ -132,6 +134,8 @@ export default function Dashboard({ user }: { user: User }) {
               <Categories key={page} table="project_categories" usedBy="projects" title="Project categories" subtitle="Types you can assign to projects" noun="category" usedByLabel="Projects" />
             ) : page === 'cashflow' ? (
               <Cashflow />
+            ) : page === 'loans' ? (
+              <Loans />
             ) : page === 'clients' ? (
               <Clients />
             ) : page === 'profile' ? (

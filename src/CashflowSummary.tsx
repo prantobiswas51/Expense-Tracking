@@ -72,6 +72,58 @@ function TopProject({ label, icon, tone, project, empty }: { label: string; icon
 }
 
 
+/** All-time loan totals (not tied to the selected period). */
+function LoanCard({ label, icon, tone, value, detail }: { label: string; icon: string; tone: string; value: string; detail?: string }) {
+  return (
+    <a href="#loans" className="block min-w-0 rounded-xl border border-[#e8e8e8] bg-white p-5 shadow-sm transition-colors hover:border-brand-500">
+      <div className="flex items-center gap-2 text-[0.8rem] font-bold text-[#545454]">
+        <i className={`fa-solid ${icon} ${tone}`} />{label}
+      </div>
+      <div className={`mt-1 break-words text-2xl font-black tabular-nums ${tone}`}>{value}</div>
+      {detail && <div className="text-[0.72rem] text-[#8a8a8a]">{detail}</div>}
+    </a>
+  )
+}
+
+function LoansCards() {
+  const [loans, setLoans] = useState<{ kind: 'lent' | 'borrowed'; amount: number; repaid: number }[] | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    supabase.from('loans').select('kind, amount, repaid').then(({ data }) => {
+      if (!cancelled) setLoans((data ?? []).map((l) => ({ ...l, amount: Number(l.amount), repaid: Number(l.repaid) })) as typeof loans)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const sum = (k: 'lent' | 'borrowed', f: (l: { amount: number; repaid: number }) => number) =>
+    loans?.filter((l) => l.kind === k).reduce((s, l) => s + f(l), 0) ?? 0
+  const amount = (l: { amount: number }) => l.amount
+  const left = (l: { amount: number; repaid: number }) => l.amount - l.repaid
+  const lent = sum('lent', amount), borrowed = sum('borrowed', amount)
+
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <LoanCard
+        label="Total lent"
+        icon="fa-arrow-up-right-from-square"
+        tone="text-[#10b981]"
+        value={loans ? money(lent) : '…'}
+        detail={loans ? `${money(sum('lent', left))} still to receive` : undefined}
+      />
+      <LoanCard
+        label="Total loans"
+        icon="fa-hand-holding-dollar"
+        tone="text-[#ef4444]"
+        value={loans ? money(borrowed) : '…'}
+        detail={loans ? `${money(sum('borrowed', left))} still to pay` : undefined}
+      />
+    </div>
+  )
+}
+
 const presets = [
   { id: 'month', label: 'This Month' },
   { id: 'prev', label: 'Previous Month' },
@@ -206,6 +258,8 @@ export default function CashflowSummary() {
           <StatCard label="Outgoing" value={rows ? money(outgoing) : '…'} tone="text-[#ef4444]" icon="fa-arrow-up" />
           <StatCard label="Net" value={rows ? money(incoming - outgoing) : '…'} tone={incoming - outgoing < 0 ? 'text-[#ef4444]' : 'text-[#1E1E1E]'} icon="fa-scale-balanced" />
         </div>
+
+        <LoansCards />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <TopProject label="Most profitable project" icon="fa-trophy" tone="text-[#10b981]" project={mostProfitable} empty="No project made a profit in this period" />

@@ -105,6 +105,7 @@ export const labelClass = 'mb-1 block text-[0.75rem] font-bold text-[#545454]'
 
 export function friendly(error: { code?: string; message: string }, duplicate = 'That value is already used.') {
   if (error.code === '23505') return duplicate
+  if (error.code === '23503') return "This is still used by other records (e.g. loans). Remove those first."
   if (error.code === '23514') return 'Some values are not in the allowed format.'
   if (error.code === 'PGRST205' || error.code === '42P01') return 'A table is missing. Run the latest migrations (restart npm run dev or npm run db:push).'
   return error.message
