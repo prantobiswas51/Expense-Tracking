@@ -124,6 +124,41 @@ function LoansCards() {
   )
 }
 
+/** Actual cash for the period: cashflow net, plus money borrowed, minus money lent (loans dated in the period, less what's been repaid). */
+function FinalCashCard({ net, from, to }: { net: number | null; from: string; to: string }) {
+  const [loans, setLoans] = useState<{ key: string; borrowed: number; lent: number } | null>(null)
+  const key = `${from}:${to}`
+
+  useEffect(() => {
+    let cancelled = false
+    supabase.from('loans').select('kind, amount, repaid').gte('loan_date', from).lte('loan_date', to).then(({ data, error }) => {
+      if (cancelled || error) return // keep "…" rather than show a total without the loans
+      const open = (kind: string) => data.filter((l) => l.kind === kind).reduce((s, l) => s + Number(l.amount) - Number(l.repaid), 0)
+      setLoans({ key: `${from}:${to}`, borrowed: open('borrowed'), lent: open('lent') })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [from, to])
+
+  const ready = net !== null && loans?.key === key
+  const final = ready ? net + loans.borrowed - loans.lent : 0
+
+  return (
+    <div className="min-w-0 rounded-xl border border-brand-500 bg-white p-5 shadow-sm">
+      <div className="flex items-center gap-2 text-[0.8rem] font-bold text-[#545454]">
+        <i className="fa-solid fa-wallet text-brand-500" />Final Cash
+      </div>
+      <div className={`mt-1 break-words text-3xl font-black tabular-nums ${final < 0 ? 'text-[#ef4444]' : 'text-[#1E1E1E]'}`}>{ready ? money(final) : '…'}</div>
+      {ready && (
+        <div className="text-[0.78rem] text-[#8a8a8a]">
+          Net {money(net)} <span className="text-[#10b981]">+ {money(loans.borrowed)} borrowed</span> <span className="text-[#ef4444]">− {money(loans.lent)} lent</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 const presets = [
   { id: 'month', label: 'This Month' },
   { id: 'prev', label: 'Previous Month' },
@@ -258,6 +293,8 @@ export default function CashflowSummary() {
           <StatCard label="Outgoing" value={rows ? money(outgoing) : '…'} tone="text-[#ef4444]" icon="fa-arrow-up" />
           <StatCard label="Net" value={rows ? money(incoming - outgoing) : '…'} tone={incoming - outgoing < 0 ? 'text-[#ef4444]' : 'text-[#1E1E1E]'} icon="fa-scale-balanced" />
         </div>
+
+        {valid && <FinalCashCard net={rows ? incoming - outgoing : null} from={from} to={to} />}
 
         <LoansCards />
 
